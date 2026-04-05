@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluación de habilidades numéricas</title>
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-surface: #f5f5f3;
+    --c-text: #1a1a18;
+    --c-muted: #5f5e5a;
+    --c-hint: #888780;
+    --c-border: rgba(26,26,24,0.12);
+    --c-border-md: rgba(26,26,24,0.25);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-serif: Georgia, "Times New Roman", serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --c-bg: #1a1a18;
+      --c-surface: #242422;
+      --c-text: #f0ede6;
+      --c-muted: #b4b2a9;
+      --c-hint: #888780;
+      --c-border: rgba(240,237,230,0.1);
+      --c-border-md: rgba(240,237,230,0.22);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--c-bg);
+    color: var(--c-text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1rem 4rem;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .phase { display: none; }
+  .phase.active { display: block; }
+
+  .stamp {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-hint);
+    margin-bottom: 1rem;
+  }
+
+  h1.title {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--c-text);
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--c-muted);
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+
+  .rules-box {
+    background: var(--c-surface);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--c-border);
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+  }
+  .rules-box p {
+    font-size: 13px;
+    color: var(--c-muted);
+    line-height: 2;
+  }
+
+  .btn-primary {
+    background: var(--c-text);
+    color: var(--c-bg);
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    font-family: var(--font);
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.82; }
+
+  .timer-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .timer-bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--c-border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  #timer-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--c-text);
+    transition: width 0.1s linear, background 0.5s;
+    border-radius: 2px;
+  }
+  #timer-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--c-muted);
+    min-width: 24px;
+    text-align: right;
+  }
+
+  .problem-counter {
+    font-size: 12px;
+    color: var(--c-hint);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.08em;
+  }
+
+  .problem-box {
+    background: var(--c-surface);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--c-border);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    min-height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #problem-text {
+    font-size: 34px;
+    font-weight: 500;
+    color: var(--c-text);
+    letter-spacing: 0.05em;
+    user-select: none;
+  }
+
+  .digit { display: inline-block; transition: transform 0.12s; }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .opt-btn {
+    background: var(--c-bg);
+    border: 0.5px solid var(--c-border-md);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--c-text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--font);
+  }
+  .opt-btn:hover:not(:disabled) { background: var(--c-surface); }
+  .opt-btn.correct { background: #EAF3DE; border-color: #639922; color: #3B6D11; }
+  .opt-btn.wrong   { background: #FCEBEB; border-color: #E24B4A; color: #A32D2D; }
+  .opt-btn:disabled { cursor: default; }
+
+  @media (prefers-color-scheme: dark) {
+    .opt-btn.correct { background: #1a2e10; border-color: #639922; color: #C0DD97; }
+    .opt-btn.wrong   { background: #2e1010; border-color: #E24B4A; color: #F7C1C1; }
+  }
+
+  .opt-digit { display: inline-block; }
+
+  #status-msg {
+    font-size: 13px;
+    color: var(--c-hint);
+    text-align: center;
+    min-height: 20px;
+    margin-bottom: 0.5rem;
+  }
+
+  .score-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .score-card {
+    flex: 1;
+    background: var(--c-surface);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    text-align: center;
+  }
+  .score-card .sc-label { font-size: 12px; color: var(--c-muted); margin-bottom: 4px; }
+  .score-card .sc-val { font-size: 28px; font-weight: 500; color: var(--c-text); }
+
+  .reveal-section { margin: 1.5rem 0; }
+  .reveal-section h2 {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--c-text);
+    margin-bottom: 0.75rem;
+  }
+  .reveal-section p {
+    font-size: 14px;
+    color: var(--c-muted);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+
+  .highlight-quote {
+    border-left: 2px solid var(--c-border-md);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    background: var(--c-surface);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  .highlight-quote p {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    color: var(--c-text);
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  .symptom-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+  .symptom-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--c-surface);
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--c-border);
+  }
+  .symptom-icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; }
+  .symptom-text { font-size: 13px; color: var(--c-muted); line-height: 1.65; }
+  .symptom-label { font-size: 12px; font-weight: 500; color: var(--c-text); display: block; margin-bottom: 2px; }
+
+  .reflection-prompt {
+    background: var(--c-surface);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--c-border);
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+  }
+  .reflection-prompt .rp-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-hint);
+    margin-bottom: 0.75rem;
+  }
+  .reflection-prompt ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .reflection-prompt li {
+    font-size: 13px;
+    color: var(--c-muted);
+    line-height: 1.65;
+    padding-left: 1rem;
+    position: relative;
+  }
+  .reflection-prompt li::before { content: "—"; position: absolute; left: 0; color: var(--c-hint); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 0.5px solid var(--c-border-md);
+    padding: 0.7rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--c-text);
+    margin-top: 0.5rem;
+    width: 100%;
+    font-family: var(--font);
+    transition: background 0.15s;
+  }
+  .btn-secondary:hover { background: var(--c-surface); }
+
+  @keyframes wobble {
+    0%   { transform: rotate(0deg); }
+    25%  { transform: rotate(-10deg); }
+    60%  { transform: rotate(12deg); }
+    85%  { transform: rotate(-6deg); }
+    100% { transform: rotate(0deg); }
+  }
+  @keyframes jitter {
+    0%,100% { transform: translate(0,0); }
+    20% { transform: translate(-2px,1px); }
+    40% { transform: translate(2px,-2px); }
+    60% { transform: translate(-2px,2px); }
+    80% { transform: translate(2px,-1px); }
+  }
+  @keyframes slide {
+    0%   { transform: translateX(0); }
+    30%  { transform: translateX(5px); }
+    60%  { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+  }
+
+  .glitch-wobble { animation: wobble 0.4s ease-in-out; }
+  .glitch-jitter { animation: jitter 0.32s linear; }
+  .glitch-slide  { animation: slide 0.36s ease-in-out; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- FASE 1: INTRO -->
+  <div class="phase active" id="phase-intro">
+    <div class="stamp">Centro de Evaluación Educativa</div>
+    <h1 class="title">Prueba de habilidades numéricas</h1>
+    <p class="subtitle">Esta evaluación mide tu velocidad y precisión con operaciones básicas. Tienes 7 segundos por pregunta.</p>
+    <div class="rules-box">
+      <p>
+        · Serán 6 operaciones en total<br>
+        · Elige la respuesta correcta antes de que se acabe el tiempo<br>
+        · Trabaja tan rápido como puedas<br>
+        · No uses calculadora
+      </p>
+    </div>
+    <button class="btn-primary" onclick="startTest()">Comenzar evaluación</button>
+  </div>
+
+  <!-- FASE 2: TEST -->
+  <div class="phase" id="phase-test">
+    <div class="timer-bar-wrap">
+      <div class="timer-bar-track"><div id="timer-bar"></div></div>
+      <span id="timer-label">7</span>
+    </div>
+    <div class="problem-counter" id="problem-counter">Problema 1 de 6</div>
+    <div class="problem-box">
+      <span id="problem-text"></span>
+    </div>
+    <div class="options-grid" id="options-grid"></div>
+    <div id="status-msg"></div>
+  </div>
+
+  <!-- FASE 3: REVEAL -->
+  <div class="phase" id="phase-reveal">
+    <div class="stamp">Fin de la evaluación</div>
+
+    <div class="score-row">
+      <div class="score-card">
+        <div class="sc-label">Correctas</div>
+        <div class="sc-val" id="score-correct">0</div>
+      </div>
+      <div class="score-card">
+        <div class="sc-label">Incorrectas</div>
+        <div class="sc-val" id="score-wrong">0</div>
+      </div>
+      <div class="score-card">
+        <div class="sc-label">Sin contestar</div>
+        <div class="sc-val" id="score-missed">0</div>
+      </div>
+    </div>
+
+    <div class="reveal-section">
+      <h2>Lo que acabas de vivir tiene nombre</h2>
+      <p>
+        Esta prueba fue diseñada para que <strong style="font-weight:500;color:var(--c-text)">experimentes</strong> lo que millones de personas sienten cada día. Los números no se comportaban de forma estable: se invertían, rotaban, intercambiaban posiciones. Eso no fue un error del sistema.
+      </p>
+      <div class="highlight-quote">
+        <p>Eso se llama <strong style="font-weight:500">discalculia</strong> — una dificultad específica del aprendizaje que afecta el procesamiento de la información numérica, independientemente de la inteligencia.</p>
+      </div>
+      <p>Aproximadamente el <strong style="font-weight:500;color:var(--c-text)">3–7%</strong> de la población mundial la presenta. En un salón de 30 personas, hay al menos 1 o 2 estudiantes que viven esta experiencia <em>en cada clase de matemáticas</em>.</p>
+    </div>
+
+    <div class="reveal-section">
+      <h2>Lo que simulamos</h2>
+      <div class="symptom-list">
+        <div class="symptom-item">
+          <svg class="symptom-icon" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="8" stroke="var(--c-border-md)" stroke-width="1"/>
+            <path d="M6 9L8 11L12 7" stroke="var(--c-text)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="symptom-text">
+            <span class="symptom-label">Inversión de dígitos</span>
+            El cerebro lee 47 como 74, o 6 como 9. Los números "se dan vuelta" sin intención.
+          </div>
+        </div>
+        <div class="symptom-item">
+          <svg class="symptom-icon" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="8" stroke="var(--c-border-md)" stroke-width="1"/>
+            <path d="M6 9L8 11L12 7" stroke="var(--c-text)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="symptom-text">
+            <span class="symptom-label">Inestabilidad visual</span>
+            Los números parecen moverse, vibrar o cambiar mientras se intentan leer.
+          </div>
+        </div>
+        <div class="symptom-item">
+          <svg class="symptom-icon" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="8" stroke="var(--c-border-md)" stroke-width="1"/>
+            <path d="M6 9L8 11L12 7" stroke="var(--c-text)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="symptom-text">
+            <span class="symptom-label">Presión temporal amplificada</span>
+            La ansiedad ante el tiempo hace que el procesamiento sea más lento y los errores aumenten.
+          </div>
+        </div>
+        <div class="symptom-item">
+          <svg class="symptom-icon" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="8" stroke="var(--c-border-md)" stroke-width="1"/>
+            <path d="M6 9L8 11L12 7" stroke="var(--c-text)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="symptom-text">
+            <span class="symptom-label">Confusión de símbolos similares</span>
+            Números como 1/7, 3/8, 2/5 se perciben como casi idénticos.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reflection-prompt">
+      <div class="rp-label">Para reflexionar en clase</div>
+      <ul>
+        <li>¿Qué sentiste cuando los números cambiaban? ¿Frustración, confusión, vergüenza?</li>
+        <li>¿Qué le decimos —implícitamente— a un estudiante cuando lo evaluamos con exámenes cronometrados?</li>
+        <li>¿Cómo modificarías una actividad de matemáticas para que sea accesible?</li>
+        <li>¿La discalculia es un problema del estudiante o del diseño curricular?</li>
+      </ul>
+    </div>
+
+    <button class="btn-secondary" onclick="resetAll()">Volver al inicio ↩</button>
+  </div>
+
+</div>
+
+<script>
+const problems = [
+  { display: "23 + 14", answer: 37, glitch: "transpose_both", level: 1 },
+  { display: "56 - 29", answer: 27, glitch: "rotate_digits",  level: 2 },
+  { display: "8 × 7",   answer: 56, glitch: "flip_one",       level: 2 },
+  { display: "91 - 46", answer: 45, glitch: "jitter_all",     level: 3 },
+  { display: "34 + 68", answer: 102,glitch: "rotate_digits",  level: 3 },
+  { display: "63 ÷ 9",  answer: 7,  glitch: "full_chaos",     level: 3 },
+];
+
+const wrongAnswerSets = [
+  [32, 41, 73, 37],
+  [72, 29, 92, 27],
+  [65, 58, 56, 85],
+  [54, 41, 45, 14],
+  [102, 201, 120, 22],
+  [9, 7, 6, 8],
+];
+
+let current = 0;
+let score = { correct: 0, wrong: 0, missed: 0 };
+let timerInterval = null;
+let timeLeft = 7;
+let answered = false;
+let glitchIntervals = [];
+
+function startTest() {
+  showPhase("phase-test");
+  current = 0;
+  score = { correct: 0, wrong: 0, missed: 0 };
+  loadProblem();
+}
+
+function showPhase(id) {
+  document.querySelectorAll(".phase").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function loadProblem() {
+  if (current >= problems.length) { endTest(); return; }
+  answered = false;
+  clearAllGlitches();
+  const p = problems[current];
+  document.getElementById("problem-counter").textContent = `Problema ${current + 1} de ${problems.length}`;
+  document.getElementById("status-msg").textContent = "";
+  renderProblem(p);
+  renderOptions(current);
+  startTimer();
+  setTimeout(() => applyGlitch(p), 700 + Math.random() * 500);
+}
+
+function renderProblem(p) {
+  const el = document.getElementById("problem-text");
+  el.innerHTML = "";
+  p.display.split("").forEach(ch => {
+    const s = document.createElement("span");
+    s.className = "digit";
+    s.textContent = ch;
+    s.dataset.original = ch;
+    el.appendChild(s);
+  });
+}
+
+function renderOptions(idx) {
+  const grid = document.getElementById("options-grid");
+  grid.innerHTML = "";
+  wrongAnswerSets[idx].forEach(val => {
+    const btn = document.createElement("button");
+    btn.className = "opt-btn";
+    btn.dataset.value = val;
+    String(val).split("").forEach(ch => {
+      const s = document.createElement("span");
+      s.className = "opt-digit";
+      s.dataset.original = ch;
+      s.textContent = ch;
+      btn.appendChild(s);
+    });
+    btn.onclick = () => selectAnswer(val, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 7;
+  const bar = document.getElementById("timer-bar");
+  const label = document.getElementById("timer-label");
+  bar.style.width = "100%";
+  bar.style.background = "var(--c-text)";
+  label.textContent = "7";
+  timerInterval = setInterval(() => {
+    timeLeft -= 0.1;
+    const pct = Math.max(0, (timeLeft / 7) * 100);
+    bar.style.width = pct + "%";
+    label.textContent = Math.ceil(timeLeft);
+    if (timeLeft <= 2) bar.style.background = "#E24B4A";
+    else if (timeLeft <= 4) bar.style.background = "#EF9F27";
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (!answered) {
+        answered = true;
+        score.missed++;
+        document.getElementById("status-msg").textContent = "Se acabó el tiempo.";
+        disableOptions();
+        setTimeout(() => { current++; loadProblem(); }, 1200);
+      }
+    }
+  }, 100);
+}
+
+function selectAnswer(val, btn) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+  clearAllGlitches();
+  const correct = problems[current].answer;
+  document.querySelectorAll(".opt-btn").forEach(b => {
+    if (parseInt(b.dataset.value) === correct) b.classList.add("correct");
+  });
+  if (val === correct) {
+    score.correct++;
+    document.getElementById("status-msg").textContent = "Correcto.";
+  } else {
+    btn.classList.add("wrong");
+    score.wrong++;
+    document.getElementById("status-msg").textContent = "Incorrecto.";
+  }
+  disableOptions();
+  setTimeout(() => { current++; loadProblem(); }, 1300);
+}
+
+function disableOptions() {
+  document.querySelectorAll(".opt-btn").forEach(b => b.disabled = true);
+}
+
+function applyGlitch(p) {
+  if (answered) return;
+  const level = p.level;
+
+  function doGlitch() {
+    if (answered) return;
+    const digits = document.querySelectorAll("#problem-text .digit");
+    digits.forEach(d => {
+      const ch = d.dataset.original;
+      if (!/\d/.test(ch)) return;
+      const r = Math.random();
+      const intensity = level / 3;
+      if (r < 0.25 * intensity) {
+        const swap = { "6":"9","9":"6","2":"5","5":"2","1":"7","7":"1" };
+        d.textContent = swap[ch] || ch;
+        d.classList.remove("glitch-wobble","glitch-jitter","glitch-slide");
+        void d.offsetWidth;
+        d.classList.add("glitch-wobble");
+        setTimeout(() => { if (!answered) d.textContent = ch; d.classList.remove("glitch-wobble"); }, 420);
+      } else if (r < 0.45 * intensity) {
+        d.classList.remove("glitch-wobble","glitch-jitter","glitch-slide");
+        void d.offsetWidth;
+        d.classList.add("glitch-jitter");
+        setTimeout(() => d.classList.remove("glitch-jitter"), 360);
+      }
+    });
+
+    if (level >= 2 && p.glitch !== "flip_one" && Math.random() < 0.3) {
+      const dArr = Array.from(digits).filter(d => /\d/.test(d.dataset.original));
+      if (dArr.length >= 2) {
+        const i = Math.floor(Math.random() * (dArr.length - 1));
+        const a = dArr[i], b = dArr[i + 1];
+        if (a && b) {
+          const ta = a.textContent, tb = b.textContent;
+          a.textContent = tb; b.textContent = ta;
+          a.classList.add("glitch-slide");
+          setTimeout(() => {
+            a.textContent = a.dataset.original;
+            b.textContent = b.dataset.original;
+            a.classList.remove("glitch-slide");
+          }, 380);
+        }
+      }
+    }
+
+    document.querySelectorAll(".opt-digit").forEach(d => {
+      if (Math.random() < 0.1 * level) {
+        const ch = d.dataset.original;
+        const swap = { "6":"9","9":"6","1":"7","7":"1","3":"8" };
+        if (swap[ch]) {
+          d.textContent = swap[ch];
+          setTimeout(() => { d.textContent = ch; }, 260 + Math.random() * 180);
+        }
+      }
+    });
+  }
+
+  glitchIntervals.push(setInterval(doGlitch, 550 + Math.random() * 350));
+  if (level >= 2) {
+    glitchIntervals.push(setInterval(doGlitch, 900 + Math.random() * 400));
+  }
+}
+
+function clearAllGlitches() {
+  glitchIntervals.forEach(clearInterval);
+  glitchIntervals = [];
+  document.querySelectorAll("#problem-text .digit").forEach(d => {
+    d.textContent = d.dataset.original;
+    d.className = "digit";
+  });
+}
+
+function endTest() {
+  clearInterval(timerInterval);
+  clearAllGlitches();
+  document.getElementById("score-correct").textContent = score.correct;
+  document.getElementById("score-wrong").textContent = score.wrong;
+  document.getElementById("score-missed").textContent = score.missed;
+  showPhase("phase-reveal");
+}
+
+function resetAll() {
+  clearInterval(timerInterval);
+  clearAllGlitches();
+  showPhase("phase-intro");
+}
+</script>
+</body>
+</html>
